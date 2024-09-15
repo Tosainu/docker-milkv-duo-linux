@@ -31,7 +31,7 @@ FROM ubuntu:noble@sha256:8a37d68f4f73ebf3d4efafbcf66379bf3728902a8038616808f04e3
 RUN \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
-    autoconf automake bc bison bzip2 ca-certificates curl flex g++ gawk gcc git gperf \
+    autoconf automake bc bison bzip2 ca-certificates cpio curl flex g++ gawk gcc git gperf \
     help2man libc-dev libncurses5-dev libssl-dev libtool-bin make patch python3 rsync texinfo \
     unzip xz-utils && \
     rm -rf /var/lib/apt/lists/*
@@ -140,8 +140,37 @@ FROM scratch AS linux
 COPY --from=build-linux /work/arch/riscv/boot/Image /work/arch/riscv/boot/dts/cvitek/*.dtb .
 
 
+FROM base AS configure-busybox
+RUN --mount=type=tmpfs,target=/tmp \
+    curl --no-progress-meter -L https://git.busybox.net/busybox/snapshot/busybox-1_36_1.tar.bz2 -o /tmp/archive.tar.bz2 && \
+    echo 'cbc37db19734db3d57c324bf8ed0fa993401a0194ff07599c404e336b2fbdc67  /tmp/archive.tar.bz2' | sha256sum -c && \
+    tar xf /tmp/archive.tar.bz2 --strip-components=1
+COPY busybox/config .config
+RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- oldconfig
+
+FROM configure-busybox AS build-busybox
+RUN \
+    make ARCH=riscv CROSS_COMPILE=riscv64-unknown-linux-gnu- -j$(nproc) && \
+    make ARCH=riscv CROSS_COMPILE=riscv64-unknown-linux-gnu- install
+
+
+FROM scratch AS busybox
+COPY --from=build-busybox /work/_install /
+
+
+FROM base AS build-ramdisk
+COPY --from=busybox / .
+COPY linux/rootfs .
+RUN find . -print0 | cpio --null --create --verbose --format=newc | gzip -9 > ramdisk.cpio.gz
+
+
+FROM scratch AS ramdisk
+COPY --from=build-ramdisk /work/ramdisk.cpio.gz .
+
+
 FROM base AS build-fitimage
 COPY --from=linux / .
+COPY --from=ramdisk / .
 COPY --from=u-boot /mkimage /dtc .
 COPY fitimage.its .
 RUN PATH="${PWD}:${PATH}" ./mkimage -f fitimage.its fitimage.bin

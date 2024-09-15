@@ -1,0 +1,6 @@
+#!/bin/busybox sh
+
+mkdir -p /proc /sys /dev
+mount -t proc none /proc -o nosuid,nodev,noexec
+mount -t sysfs none /sys -o nosuid,nodev,noexec
+mount -t devtmpfs none /dev -o nosuid,nodev,noexec,mode=755

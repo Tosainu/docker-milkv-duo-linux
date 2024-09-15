@@ -12,7 +12,7 @@
 			compression = "none";
 			load = <0x80200000>;
 			entry = <0x80200000>;
-			hash-1 {
+			hash {
 				algo = "sha1";
 			};
 		};
@@ -22,16 +22,31 @@
 			type = "flat_dt";
 			arch = "riscv";
 			compression = "none";
-			hash-1 {
+			hash {
+				algo = "sha1";
+			};
+		};
+		ramdisk {
+			description = "ramdisk";
+			data = /incbin/("ramdisk.cpio.gz");
+			type = "ramdisk";
+			arch = "riscv";
+			os = "linux";
+			compression = "none";
+			hash-i {
 				algo = "sha1";
 			};
 		};
 	};
 	configurations {
-		default = "conf-1";
-		conf-1{
+		default = "conf";
+		conf{
 			kernel = "kernel";
 			fdt = "fdt";
+			ramdisk = "ramdisk";
+			hash {
+				algo = "sha1";
+			};
 		};
 	};
 };
