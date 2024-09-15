@@ -112,3 +112,28 @@ RUN \
 
 FROM scratch AS fsbl
 COPY --from=build-fsbl /work/build/cv180x/fip.bin .
+
+
+FROM base AS configure-linux
+COPY duo-buildroot-sdk/linux_5.10 .
+COPY --from=mmap-defs /cvi_board_memmap.h scripts/dtc/include-prefixes/
+COPY duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/linux/cvitek_cv1800b_milkv_duo_sd_defconfig arch/riscv/configs
+COPY \
+    duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/dts_riscv/cv1800b_milkv_duo_sd.dts \
+    duo-buildroot-sdk/build/boards/default/dts/cv180x/*.dtsi \
+    duo-buildroot-sdk/build/boards/default/dts/cv180x_riscv/*.dtsi \
+    arch/riscv/boot/dts/cvitek/
+RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv cvitek_cv1800b_milkv_duo_sd_defconfig
+
+
+FROM configure-linux AS build-linux
+RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv -j$(nproc) Image modules dtbs
+
+
+FROM scratch AS linux
+COPY --from=build-linux /work/arch/riscv/boot/Image /work/arch/riscv/boot/dts/cvitek/*.dtb .
+
+
+FROM scratch AS all
+COPY --from=fsbl / .
+COPY --from=linux / .

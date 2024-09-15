@@ -21,7 +21,6 @@ CONFIG_HUSH_PARSER=y
 # CONFIG_CMD_CONSOLE is not set
 # CONFIG_CMD_CPU is not set
 # CONFIG_CMD_BOOTD is not set
-# CONFIG_CMD_BOOTI is not set
 # CONFIG_BOOTM_NETBSD is not set
 CONFIG_BOOTM_OPENRTOS=y
 # CONFIG_BOOTM_PLAN9 is not set
@@ -38,6 +37,9 @@ CONFIG_BOOTM_OPENRTOS=y
 # CONFIG_CMD_SAVEENV is not set
 # CONFIG_CMD_ENV_EXISTS is not set
 # CONFIG_CMD_CRC32 is not set
+# CONFIG_CMD_LZMADEC is not set
+# CONFIG_CMD_UNLZ4 is not set
+# CONFIG_CMD_UNZIP is not set
 # CONFIG_CMD_FLASH is not set
 # CONFIG_CMD_LOADB is not set
 # CONFIG_CMD_LOADS is not set
