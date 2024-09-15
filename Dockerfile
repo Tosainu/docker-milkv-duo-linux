@@ -83,3 +83,14 @@ RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- cvitek_cv1800b_milkv_duo_sd_de
 
 FROM configure-u-boot AS build-u-boot
 RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- -j$(nproc) all
+
+
+FROM scratch AS u-boot
+COPY --from=build-u-boot /work/u-boot.bin /u-boot-raw.bin
+COPY --from=build-u-boot /work/arch/riscv/dts/cv1800b_milkv_duo_sd.dtb .
+
+
+FROM base AS build-opensbi
+COPY duo-buildroot-sdk/opensbi .
+COPY --from=u-boot / /u-boot
+RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- PLATFORM=generic FW_PAYLOAD_PATH=/u-boot/u-boot-raw.bin FW_FDT_PATH=/u-boot/cv1800b_milkv_duo_sd.dtb -j$(nproc)
