@@ -31,7 +31,7 @@ FROM ubuntu:noble@sha256:8a37d68f4f73ebf3d4efafbcf66379bf3728902a8038616808f04e3
 RUN \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
-    autoconf automake bc bison bzip2 ca-certificates curl device-tree-compiler flex g++ gawk gcc git gperf \
+    autoconf automake bc bison bzip2 ca-certificates curl flex g++ gawk gcc git gperf \
     help2man libc-dev libncurses5-dev libssl-dev libtool-bin make patch python3 rsync texinfo \
     unzip xz-utils && \
     rm -rf /var/lib/apt/lists/*
@@ -78,7 +78,7 @@ COPY \
     arch/riscv/dts/
 ARG CHIP=cv1800b
 ARG CVIBOARD=milkv_duo_sd
-RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- cvitek_cv1800b_milkv_duo_sd_defconfig
+RUN PATH="${PWD}/scripts/dtc:${PATH}" make CROSS_COMPILE=riscv64-unknown-linux-gnu- cvitek_cv1800b_milkv_duo_sd_defconfig
 
 
 FROM configure-u-boot AS build-u-boot
