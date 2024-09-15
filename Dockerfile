@@ -94,3 +94,21 @@ FROM base AS build-opensbi
 COPY duo-buildroot-sdk/opensbi .
 COPY --from=u-boot / /u-boot
 RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- PLATFORM=generic FW_PAYLOAD_PATH=/u-boot/u-boot-raw.bin FW_FDT_PATH=/u-boot/cv1800b_milkv_duo_sd.dtb -j$(nproc)
+
+
+FROM scratch AS opensbi
+COPY --from=build-opensbi /work/build/platform/generic/firmware/fw_dynamic.bin .
+
+
+FROM base AS build-fsbl
+COPY duo-buildroot-sdk/fsbl .
+COPY --from=mmap-defs /cvi_board_memmap.h plat/cv180x/include/
+COPY --from=opensbi / /opensbi
+COPY --from=u-boot /u-boot-raw.bin /u-boot/
+RUN \
+    sed -i 's!^\(MONITOR_PATH\)\b.\+$!\1 = /opensbi/fw_dynamic.bin!' make_helpers/fip.mk && \
+    make CROSS_COMPILE=riscv64-unknown-linux-gnu- CHIP_ARCH=cv180x BOOT_CPU=riscv DDR_CFG=ddr2_1333_x16 TEST_FROM_SPINOR1=0 PAGE_SIZE_64KB=1 BLCP_2ND_PATH= LOADER_2ND_PATH=/u-boot/u-boot-raw.bin -j$(nproc)
+
+
+FROM scratch AS fsbl
+COPY --from=build-fsbl /work/build/cv180x/fip.bin .

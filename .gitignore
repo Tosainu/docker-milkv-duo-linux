@@ -2,3 +2,4 @@
 .config.old
 *.log
 .build
+build
