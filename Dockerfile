@@ -31,9 +31,8 @@ FROM ubuntu:noble@sha256:8a37d68f4f73ebf3d4efafbcf66379bf3728902a8038616808f04e3
 RUN \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
-    autoconf automake bc bison bzip2 ca-certificates cpio curl flex g++ gawk gcc git gperf \
-    help2man libc-dev libncurses5-dev libssl-dev libtool-bin make patch python3 rsync texinfo \
-    unzip xz-utils && \
+        autoconf automake bc bison bzip2 ca-certificates cpio curl flex g++ gcc kmod \
+        libc-dev libncurses5-dev libssl-dev libtool-bin make patch python3 xz-utils && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=ct-ng --chown=root:root /opt/sdk /opt/sdk
 ENV PATH="/opt/sdk/riscv64-unknown-linux-gnu/bin:${PATH}"
@@ -127,11 +126,18 @@ RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv cvitek_cv1800b_milk
 
 
 FROM configure-linux AS build-linux
-RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv -j$(nproc) Image modules
+RUN \
+    mkdir /modules && \
+    make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv -j$(nproc) Image modules && \
+    make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv INSTALL_MOD_PATH=/modules modules_install
 
 
 FROM scratch AS linux
 COPY --from=build-linux /work/arch/riscv/boot/Image .
+
+
+FROM scratch AS linux-modules
+COPY --from=build-linux /modules .
 
 
 FROM base AS configure-busybox
@@ -154,6 +160,7 @@ COPY --from=build-busybox /work/_install /
 
 FROM base AS build-ramdisk
 COPY --from=busybox / .
+COPY --from=linux-modules / .
 COPY linux/rootfs .
 RUN find . -print0 | cpio --null --create --verbose --format=newc | gzip -9 > ramdisk.cpio.gz
 
