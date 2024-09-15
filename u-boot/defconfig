@@ -10,9 +10,9 @@ CONFIG_FIT=y
 # CONFIG_FIT_PRINT is not set
 # CONFIG_LEGACY_IMAGE_FORMAT is not set
 # CONFIG_ARCH_FIXUP_FDT_MEMORY is not set
-CONFIG_BOOTDELAY=1
+CONFIG_BOOTDELAY=3
 CONFIG_USE_BOOTCOMMAND=y
-CONFIG_BOOTCOMMAND="run distro_bootcmd"
+CONFIG_BOOTCOMMAND="set bootargs earlycon=sbi console=ttyS0,115200 riscv.fwsz=0x80000 loglevel=9; if load mmc 0:1 0x81400000 /fitimage.bin; then; bootm 0x81400000; fi"
 CONFIG_HUSH_PARSER=y
 # CONFIG_CMDLINE_EDITING is not set
 # CONFIG_AUTO_COMPLETE is not set

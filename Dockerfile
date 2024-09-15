@@ -88,14 +88,18 @@ RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- -j$(nproc) all
 
 
 FROM scratch AS u-boot
-COPY --from=build-u-boot /work/u-boot.bin /u-boot-raw.bin
-COPY --from=build-u-boot /work/arch/riscv/dts/cv1800b_milkv_duo_sd.dtb .
+COPY --from=build-u-boot \
+    /work/arch/riscv/dts/cv1800b_milkv_duo_sd.dtb \
+    /work/scripts/dtc \
+    /work/tools/mkimage \
+    /work/u-boot.bin \
+    /
 
 
 FROM base AS build-opensbi
 COPY duo-buildroot-sdk/opensbi .
-COPY --from=u-boot / /u-boot
-RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- PLATFORM=generic FW_PAYLOAD_PATH=/u-boot/u-boot-raw.bin FW_FDT_PATH=/u-boot/cv1800b_milkv_duo_sd.dtb -j$(nproc)
+COPY --from=u-boot /u-boot.bin /cv1800b_milkv_duo_sd.dtb /u-boot/
+RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- PLATFORM=generic FW_PAYLOAD_PATH=/u-boot/u-boot.bin FW_FDT_PATH=/u-boot/cv1800b_milkv_duo_sd.dtb -j$(nproc)
 
 
 FROM scratch AS opensbi
@@ -106,10 +110,10 @@ FROM base AS build-fsbl
 COPY duo-buildroot-sdk/fsbl .
 COPY --from=mmap-defs /cvi_board_memmap.h plat/cv180x/include/
 COPY --from=opensbi / /opensbi
-COPY --from=u-boot /u-boot-raw.bin /u-boot/
+COPY --from=u-boot /u-boot.bin /u-boot/
 RUN \
     sed -i 's!^\(MONITOR_PATH\)\b.\+$!\1 = /opensbi/fw_dynamic.bin!' make_helpers/fip.mk && \
-    make CROSS_COMPILE=riscv64-unknown-linux-gnu- CHIP_ARCH=cv180x BOOT_CPU=riscv DDR_CFG=ddr2_1333_x16 TEST_FROM_SPINOR1=0 PAGE_SIZE_64KB=1 BLCP_2ND_PATH= LOADER_2ND_PATH=/u-boot/u-boot-raw.bin -j$(nproc)
+    make CROSS_COMPILE=riscv64-unknown-linux-gnu- CHIP_ARCH=cv180x BOOT_CPU=riscv DDR_CFG=ddr2_1333_x16 TEST_FROM_SPINOR1=0 PAGE_SIZE_64KB=1 BLCP_2ND_PATH= LOADER_2ND_PATH=/u-boot/u-boot.bin -j$(nproc)
 
 
 FROM scratch AS fsbl
@@ -136,6 +140,17 @@ FROM scratch AS linux
 COPY --from=build-linux /work/arch/riscv/boot/Image /work/arch/riscv/boot/dts/cvitek/*.dtb .
 
 
-FROM scratch AS all
-COPY --from=fsbl / .
+FROM base AS build-fitimage
 COPY --from=linux / .
+COPY --from=u-boot /mkimage /dtc .
+COPY fitimage.its .
+RUN PATH="${PWD}:${PATH}" ./mkimage -f fitimage.its fitimage.bin
+
+
+FROM scratch AS fitimage
+COPY --from=build-fitimage /work/fitimage.bin .
+
+
+FROM scratch AS all
+COPY --from=fitimage / .
+COPY --from=fsbl / .

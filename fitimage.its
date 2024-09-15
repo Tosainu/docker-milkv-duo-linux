@@ -1,0 +1,37 @@
+/dts-v1/;
+
+/ {
+	description = "Kernel for Milk-V Duo";
+	images {
+		kernel {
+			description = "kernel";
+			data = /incbin/("Image");
+			type = "kernel";
+			arch = "riscv";
+			os = "linux";
+			compression = "none";
+			load = <0x80200000>;
+			entry = <0x80200000>;
+			hash-1 {
+				algo = "sha1";
+			};
+		};
+		fdt {
+			description = "dtb";
+			data = /incbin/("cv1800b_milkv_duo_sd.dtb");
+			type = "flat_dt";
+			arch = "riscv";
+			compression = "none";
+			hash-1 {
+				algo = "sha1";
+			};
+		};
+	};
+	configurations {
+		default = "conf-1";
+		conf-1{
+			kernel = "kernel";
+			fdt = "fdt";
+		};
+	};
+};
