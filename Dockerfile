@@ -70,15 +70,15 @@ COPY --from=mmap-defs /cvi_board_memmap.h include/
 COPY --from=cvipart /* include/
 COPY duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/u-boot/cvitek.h include/cvitek/
 COPY duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/u-boot/cvi_board_init.c board/cvitek/
-COPY duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/u-boot/cvitek_cv1800b_milkv_duo_sd_defconfig configs/
 COPY \
     duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/dts_riscv/cv1800b_milkv_duo_sd.dts \
     duo-buildroot-sdk/build/boards/default/dts/cv180x/*.dtsi \
     duo-buildroot-sdk/build/boards/default/dts/cv180x_riscv/*.dtsi \
     arch/riscv/dts/
-ARG CHIP=cv1800b
-ARG CVIBOARD=milkv_duo_sd
-RUN PATH="${PWD}/scripts/dtc:${PATH}" make CROSS_COMPILE=riscv64-unknown-linux-gnu- cvitek_cv1800b_milkv_duo_sd_defconfig
+COPY u-boot/defconfig configs/milkv_duo_my_defconfig
+ENV CHIP=cv1800b
+ENV CVIBOARD=milkv_duo_sd
+RUN PATH="${PWD}/scripts/dtc:${PATH}" make CROSS_COMPILE=riscv64-unknown-linux-gnu- milkv_duo_my_defconfig
 
 
 FROM configure-u-boot AS build-u-boot
