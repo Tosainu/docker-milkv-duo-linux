@@ -1,0 +1,5 @@
+/ {
+	chosen {
+		bootargs = "earlycon=sbi console=ttyS0,115200 riscv.fwsz=0x80000 loglevel=9 rdinit=/sbin/init";
+	};
+};

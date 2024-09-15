@@ -122,22 +122,16 @@ COPY --from=build-fsbl /work/build/cv180x/fip.bin .
 
 FROM base AS configure-linux
 COPY duo-buildroot-sdk/linux_5.10 .
-COPY --from=mmap-defs /cvi_board_memmap.h scripts/dtc/include-prefixes/
 COPY duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/linux/cvitek_cv1800b_milkv_duo_sd_defconfig arch/riscv/configs
-COPY \
-    duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/dts_riscv/cv1800b_milkv_duo_sd.dts \
-    duo-buildroot-sdk/build/boards/default/dts/cv180x/*.dtsi \
-    duo-buildroot-sdk/build/boards/default/dts/cv180x_riscv/*.dtsi \
-    arch/riscv/boot/dts/cvitek/
 RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv cvitek_cv1800b_milkv_duo_sd_defconfig
 
 
 FROM configure-linux AS build-linux
-RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv -j$(nproc) Image modules dtbs
+RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv -j$(nproc) Image modules
 
 
 FROM scratch AS linux
-COPY --from=build-linux /work/arch/riscv/boot/Image /work/arch/riscv/boot/dts/cvitek/*.dtb .
+COPY --from=build-linux /work/arch/riscv/boot/Image .
 
 
 FROM base AS configure-busybox
@@ -168,7 +162,27 @@ FROM scratch AS ramdisk
 COPY --from=build-ramdisk /work/ramdisk.cpio.gz .
 
 
+FROM base AS build-dtb-linux
+COPY --from=u-boot /dtc .
+COPY --from=mmap-defs /cvi_board_memmap.h include/
+COPY --from=configure-linux /work/include/dt-bindings include/dt-bindings
+COPY \
+    duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/dts_riscv/cv1800b_milkv_duo_sd.dts \
+    duo-buildroot-sdk/build/boards/default/dts/cv180x/*.dtsi \
+    duo-buildroot-sdk/build/boards/default/dts/cv180x_riscv/*.dtsi \
+    .
+COPY append.dts .
+RUN \
+    cat append.dts >> cv1800b_milkv_duo_sd.dts && \
+    gcc -E -nostdinc -undef -D__DTS__ -x assembler-with-cpp -Iinclude -o - cv1800b_milkv_duo_sd.dts | ./dtc -@ -p 0x1000 -I dts -O dtb -o cv1800b_milkv_duo_sd.dtb
+
+
+FROM scratch AS dtb-linux
+COPY --from=build-dtb-linux /work/cv1800b_milkv_duo_sd.dtb .
+
+
 FROM base AS build-fitimage
+COPY --from=dtb-linux / .
 COPY --from=linux / .
 COPY --from=ramdisk / .
 COPY --from=u-boot /mkimage /dtc .

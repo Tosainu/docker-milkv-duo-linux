@@ -12,7 +12,7 @@ CONFIG_FIT=y
 # CONFIG_ARCH_FIXUP_FDT_MEMORY is not set
 CONFIG_BOOTDELAY=3
 CONFIG_USE_BOOTCOMMAND=y
-CONFIG_BOOTCOMMAND="set bootargs earlycon=sbi console=ttyS0,115200 riscv.fwsz=0x80000 loglevel=9 rdinit=/sbin/init; if load mmc 0:1 0x81400000 /fitimage.bin; then; bootm 0x81400000; fi"
+CONFIG_BOOTCOMMAND="if load mmc 0:1 0x81400000 /fitimage.bin; then; bootm 0x81400000; fi"
 CONFIG_HUSH_PARSER=y
 # CONFIG_CMDLINE_EDITING is not set
 # CONFIG_AUTO_COMPLETE is not set
