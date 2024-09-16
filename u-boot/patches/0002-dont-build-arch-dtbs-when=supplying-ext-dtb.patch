@@ -1,0 +1,24 @@
+diff --git a/dts/Makefile b/dts/Makefile
+index d6c2c9daf31..bedc4b6c990 100644
+--- a/dts/Makefile
++++ b/dts/Makefile
+@@ -40,7 +40,7 @@ endif
+ 
+ targets += dt.dtb
+ 
+-$(DTB): arch-dtbs
++$(DTB):
+ 	$(Q)test -e $@ || (						\
+ 	echo >&2;							\
+ 	echo >&2 "Device Tree Source ($@) is not correctly specified.";	\
+@@ -49,6 +49,10 @@ $(DTB): arch-dtbs
+ 	echo >&2;							\
+ 	/bin/false)
+ 
++ifeq ($(EXT_DTB),)
++$(DTB): arch-dtbs
++endif
++
+ PHONY += arch-dtbs
+ arch-dtbs:
+ 	$(Q)$(MAKE) $(build)=$(dt_dir) dtbs

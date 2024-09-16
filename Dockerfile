@@ -65,17 +65,18 @@ FROM scratch AS cvipart
 COPY --from=build-cvipart /work/include /
 
 
+FROM base AS configure-linux
+COPY third_party/duo-buildroot-sdk/linux_5.10 .
+COPY third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/linux/cvitek_cv1800b_milkv_duo_sd_defconfig arch/riscv/configs
+RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv cvitek_cv1800b_milkv_duo_sd_defconfig
+
+
 FROM base AS configure-u-boot
 COPY third_party/duo-buildroot-sdk/u-boot-2021.10 .
 COPY --from=mmap-defs /cvi_board_memmap.h include/
 COPY --from=cvipart /* include/
 COPY third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/u-boot/cvitek.h include/cvitek/
 COPY third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/u-boot/cvi_board_init.c board/cvitek/
-COPY \
-    third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/dts_riscv/cv1800b_milkv_duo_sd.dts \
-    third_party/duo-buildroot-sdk/build/boards/default/dts/cv180x/*.dtsi \
-    third_party/duo-buildroot-sdk/build/boards/default/dts/cv180x_riscv/*.dtsi \
-    arch/riscv/dts/
 COPY u-boot/patches /patches
 COPY u-boot/defconfig configs/milkv_duo_my_defconfig
 ENV CHIP=cv1800b
@@ -85,14 +86,40 @@ RUN \
     PATH="${PWD}/scripts/dtc:${PATH}" make CROSS_COMPILE=riscv64-unknown-linux-gnu- milkv_duo_my_defconfig
 
 
-FROM configure-u-boot AS build-u-boot
-RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- -j$(nproc) all
+FROM configure-u-boot AS build-u-boot-dtc
+RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- -j$(nproc) scripts_dtc
+
+
+FROM scratch AS u-boot-dtc
+COPY --from=build-u-boot-dtc /work/scripts/dtc /
+
+
+FROM base AS build-dtb
+COPY --from=u-boot-dtc /dtc .
+COPY --from=mmap-defs /cvi_board_memmap.h include/
+COPY --from=configure-linux /work/include/dt-bindings include/dt-bindings
+COPY \
+    third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/dts_riscv/cv1800b_milkv_duo_sd.dts \
+    third_party/duo-buildroot-sdk/build/boards/default/dts/cv180x/*.dtsi \
+    third_party/duo-buildroot-sdk/build/boards/default/dts/cv180x_riscv/*.dtsi \
+    .
+COPY append.dts .
+RUN \
+    cat append.dts >> cv1800b_milkv_duo_sd.dts && \
+    gcc -E -nostdinc -undef -D__DTS__ -x assembler-with-cpp -Iinclude -o - cv1800b_milkv_duo_sd.dts | ./dtc -@ -p 0x1000 -I dts -O dtb -o cv1800b_milkv_duo_sd.dtb
+
+
+FROM scratch AS dtb
+COPY --from=build-dtb /work/cv1800b_milkv_duo_sd.dtb /
+
+
+FROM build-u-boot-dtc AS build-u-boot
+COPY --from=dtb / /dtb/
+RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- EXT_DTB=/dtb/cv1800b_milkv_duo_sd.dtb -j$(nproc) all
 
 
 FROM scratch AS u-boot
 COPY --from=build-u-boot \
-    /work/arch/riscv/dts/cv1800b_milkv_duo_sd.dtb \
-    /work/scripts/dtc \
     /work/tools/mkimage \
     /work/u-boot.bin \
     /
@@ -100,8 +127,9 @@ COPY --from=build-u-boot \
 
 FROM base AS build-opensbi
 COPY third_party/duo-buildroot-sdk/opensbi .
-COPY --from=u-boot /u-boot.bin /cv1800b_milkv_duo_sd.dtb /u-boot/
-RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- PLATFORM=generic FW_PAYLOAD_PATH=/u-boot/u-boot.bin FW_FDT_PATH=/u-boot/cv1800b_milkv_duo_sd.dtb -j$(nproc)
+COPY --from=dtb / /dtb/
+COPY --from=u-boot /u-boot.bin /u-boot/
+RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- PLATFORM=generic FW_PAYLOAD_PATH=/u-boot/u-boot.bin FW_FDT_PATH=/dtb/cv1800b_milkv_duo_sd.dtb -j$(nproc)
 
 
 FROM scratch AS opensbi
@@ -120,12 +148,6 @@ RUN \
 
 FROM scratch AS fsbl
 COPY --from=build-fsbl /work/build/cv180x/fip.bin /
-
-
-FROM base AS configure-linux
-COPY third_party/duo-buildroot-sdk/linux_5.10 .
-COPY third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/linux/cvitek_cv1800b_milkv_duo_sd_defconfig arch/riscv/configs
-RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv cvitek_cv1800b_milkv_duo_sd_defconfig
 
 
 FROM configure-linux AS build-linux
@@ -172,30 +194,12 @@ FROM scratch AS ramdisk
 COPY --from=build-ramdisk /ramdisk.cpio.gz /
 
 
-FROM base AS build-dtb-linux
-COPY --from=u-boot /dtc .
-COPY --from=mmap-defs /cvi_board_memmap.h include/
-COPY --from=configure-linux /work/include/dt-bindings include/dt-bindings
-COPY \
-    third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/dts_riscv/cv1800b_milkv_duo_sd.dts \
-    third_party/duo-buildroot-sdk/build/boards/default/dts/cv180x/*.dtsi \
-    third_party/duo-buildroot-sdk/build/boards/default/dts/cv180x_riscv/*.dtsi \
-    .
-COPY append.dts .
-RUN \
-    cat append.dts >> cv1800b_milkv_duo_sd.dts && \
-    gcc -E -nostdinc -undef -D__DTS__ -x assembler-with-cpp -Iinclude -o - cv1800b_milkv_duo_sd.dts | ./dtc -@ -p 0x1000 -I dts -O dtb -o cv1800b_milkv_duo_sd.dtb
-
-
-FROM scratch AS dtb-linux
-COPY --from=build-dtb-linux /work/cv1800b_milkv_duo_sd.dtb /
-
-
 FROM base AS build-fitimage
-COPY --from=dtb-linux / .
+COPY --from=dtb / .
 COPY --from=linux / .
 COPY --from=ramdisk / .
-COPY --from=u-boot /mkimage /dtc .
+COPY --from=u-boot /mkimage .
+COPY --from=u-boot-dtc /dtc .
 COPY fitimage.its .
 RUN PATH="${PWD}:${PATH}" ./mkimage -f fitimage.its fitimage.bin
 
