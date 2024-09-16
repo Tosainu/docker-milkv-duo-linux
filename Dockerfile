@@ -42,8 +42,10 @@ WORKDIR /work
 FROM base AS build-mmap-defs
 COPY third_party/duo-buildroot-sdk/build/scripts/mmap_conv.py .
 COPY third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/memmap.py .
-RUN ./mmap_conv.py --type h memmap.py cvi_board_memmap.h
-RUN for ext in h conf ld; do ./mmap_conv.py --type "$ext" memmap.py "cvi_board_memmap.$ext"; done
+RUN \
+    # set ION_SIZE to 0 \
+    sed -i '/\bION_SIZE\b =/s/[0-9.]\+/0/' memmap.py && \
+    for ext in h conf ld; do ./mmap_conv.py --type "$ext" memmap.py "cvi_board_memmap.$ext"; done
 
 
 FROM scratch AS mmap-defs
