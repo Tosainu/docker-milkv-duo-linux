@@ -163,11 +163,11 @@ FROM base AS build-ramdisk
 COPY --from=busybox / .
 COPY --from=linux-modules / .
 COPY linux/rootfs .
-RUN find . -print0 | cpio --null --create --verbose --format=newc | gzip -9 > ramdisk.cpio.gz
+RUN find . -print0 | cpio --null --create --verbose --format=newc | gzip -9 > /ramdisk.cpio.gz
 
 
 FROM scratch AS ramdisk
-COPY --from=build-ramdisk /work/ramdisk.cpio.gz /
+COPY --from=build-ramdisk /ramdisk.cpio.gz /
 
 
 FROM base AS build-dtb-linux
