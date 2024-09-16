@@ -1,0 +1,33 @@
+diff --git a/include/configs/cv180x-asic.h b/include/configs/cv180x-asic.h
+index 67d1a0e98..16f144063 100644
+--- a/include/configs/cv180x-asic.h
++++ b/include/configs/cv180x-asic.h
+@@ -26,9 +26,6 @@
+ #include "cvipart.h"
+ #include "cvi_panels/cvi_panel_diffs.h"
+ 
+-// defined in this .h
+-#undef CONFIG_BOOTCOMMAND
+-
+ #if defined(__aarch64__)
+ #define CONFIG_ARMV8_SWITCH_TO_EL1
+ #endif
+@@ -325,13 +322,13 @@
+ 				"mmc read ${uImage_addr} ${BOOT_PART_OFFSET} ${BOOT_PART_SIZE} ;"		\
+ 				UBOOT_VBOOT_BOOTM_COMMAND
+ 	#endif
+-
+-#else
+-	/* define your environment */
+-	#define CONFIG_BOOTCOMMAND ""
+-
+ #endif /* CONFIG_USE_DEFAULT_ENV */
+ 
++#ifndef CONFIG_EXTRA_ENV_SETTINGS
++#define CONFIG_EXTRA_ENV_SETTINGS \
++	"fdt_addr_r=" __stringify(CVIMMAP_UIMAG_ADDR) "\0"
++#endif
++
+ #define CVI_SPL_BOOTAGRS \
+ 	PARTS " "  \
+ 	ROOTARGS " " \

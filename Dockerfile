@@ -74,11 +74,12 @@ COPY \
     third_party/duo-buildroot-sdk/build/boards/default/dts/cv180x/*.dtsi \
     third_party/duo-buildroot-sdk/build/boards/default/dts/cv180x_riscv/*.dtsi \
     arch/riscv/dts/
+COPY u-boot/patches /patches
 COPY u-boot/defconfig configs/milkv_duo_my_defconfig
 ENV CHIP=cv1800b
 ENV CVIBOARD=milkv_duo_sd
 RUN \
-    sed -i '/^#undef CONFIG_BOOTCOMMAND/d; /^#else/,/#define CONFIG_BOOTCOMMAND ""$/d' include/configs/cv180x-asic.h && \
+    find /patches -type f -print -exec sh -c 'patch -Np1 < $1' shell {} \; && \
     PATH="${PWD}/scripts/dtc:${PATH}" make CROSS_COMPILE=riscv64-unknown-linux-gnu- milkv_duo_my_defconfig
 
 

@@ -12,7 +12,7 @@ CONFIG_FIT=y
 # CONFIG_ARCH_FIXUP_FDT_MEMORY is not set
 CONFIG_BOOTDELAY=3
 CONFIG_USE_BOOTCOMMAND=y
-CONFIG_BOOTCOMMAND="if load mmc 0:1 0x81400000 /fitimage.bin; then; bootm 0x81400000; fi"
+CONFIG_BOOTCOMMAND="if load mmc 0:1 ${fdt_addr_r} /fitimage.bin; then bootm ${fdt_addr_r}; fi"
 CONFIG_HUSH_PARSER=y
 # CONFIG_CMDLINE_EDITING is not set
 # CONFIG_AUTO_COMPLETE is not set
