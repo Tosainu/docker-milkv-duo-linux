@@ -40,19 +40,19 @@ WORKDIR /work
 
 
 FROM base AS build-mmap-defs
-COPY duo-buildroot-sdk/build/scripts/mmap_conv.py .
-COPY duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/memmap.py .
+COPY third_party/duo-buildroot-sdk/build/scripts/mmap_conv.py .
+COPY third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/memmap.py .
 RUN ./mmap_conv.py --type h memmap.py cvi_board_memmap.h
 RUN for ext in h conf ld; do ./mmap_conv.py --type "$ext" memmap.py "cvi_board_memmap.$ext"; done
 
 
 FROM scratch AS mmap-defs
-COPY --from=build-mmap-defs /work/cvi_board_memmap.* .
+COPY --from=build-mmap-defs /work/cvi_board_memmap.* /
 
 
 FROM base AS build-cvipart
-COPY duo-buildroot-sdk/build/tools/common/image_tool .
-COPY duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/partition/partition_sd.xml .
+COPY third_party/duo-buildroot-sdk/build/tools/common/image_tool .
+COPY third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/partition/partition_sd.xml .
 RUN \
     mkdir include && \
     python3 mkcvipart.py partition_sd.xml include && \
@@ -60,19 +60,19 @@ RUN \
 
 
 FROM scratch AS cvipart
-COPY --from=build-cvipart /work/include .
+COPY --from=build-cvipart /work/include /
 
 
 FROM base AS configure-u-boot
-COPY duo-buildroot-sdk/u-boot-2021.10 .
+COPY third_party/duo-buildroot-sdk/u-boot-2021.10 .
 COPY --from=mmap-defs /cvi_board_memmap.h include/
 COPY --from=cvipart /* include/
-COPY duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/u-boot/cvitek.h include/cvitek/
-COPY duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/u-boot/cvi_board_init.c board/cvitek/
+COPY third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/u-boot/cvitek.h include/cvitek/
+COPY third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/u-boot/cvi_board_init.c board/cvitek/
 COPY \
-    duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/dts_riscv/cv1800b_milkv_duo_sd.dts \
-    duo-buildroot-sdk/build/boards/default/dts/cv180x/*.dtsi \
-    duo-buildroot-sdk/build/boards/default/dts/cv180x_riscv/*.dtsi \
+    third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/dts_riscv/cv1800b_milkv_duo_sd.dts \
+    third_party/duo-buildroot-sdk/build/boards/default/dts/cv180x/*.dtsi \
+    third_party/duo-buildroot-sdk/build/boards/default/dts/cv180x_riscv/*.dtsi \
     arch/riscv/dts/
 COPY u-boot/defconfig configs/milkv_duo_my_defconfig
 ENV CHIP=cv1800b
@@ -96,17 +96,17 @@ COPY --from=build-u-boot \
 
 
 FROM base AS build-opensbi
-COPY duo-buildroot-sdk/opensbi .
+COPY third_party/duo-buildroot-sdk/opensbi .
 COPY --from=u-boot /u-boot.bin /cv1800b_milkv_duo_sd.dtb /u-boot/
 RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- PLATFORM=generic FW_PAYLOAD_PATH=/u-boot/u-boot.bin FW_FDT_PATH=/u-boot/cv1800b_milkv_duo_sd.dtb -j$(nproc)
 
 
 FROM scratch AS opensbi
-COPY --from=build-opensbi /work/build/platform/generic/firmware/fw_dynamic.bin .
+COPY --from=build-opensbi /work/build/platform/generic/firmware/fw_dynamic.bin /
 
 
 FROM base AS build-fsbl
-COPY duo-buildroot-sdk/fsbl .
+COPY third_party/duo-buildroot-sdk/fsbl .
 COPY --from=mmap-defs /cvi_board_memmap.h plat/cv180x/include/
 COPY --from=opensbi / /opensbi
 COPY --from=u-boot /u-boot.bin /u-boot/
@@ -116,12 +116,12 @@ RUN \
 
 
 FROM scratch AS fsbl
-COPY --from=build-fsbl /work/build/cv180x/fip.bin .
+COPY --from=build-fsbl /work/build/cv180x/fip.bin /
 
 
 FROM base AS configure-linux
-COPY duo-buildroot-sdk/linux_5.10 .
-COPY duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/linux/cvitek_cv1800b_milkv_duo_sd_defconfig arch/riscv/configs
+COPY third_party/duo-buildroot-sdk/linux_5.10 .
+COPY third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/linux/cvitek_cv1800b_milkv_duo_sd_defconfig arch/riscv/configs
 RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv cvitek_cv1800b_milkv_duo_sd_defconfig
 
 
@@ -133,11 +133,11 @@ RUN \
 
 
 FROM scratch AS linux
-COPY --from=build-linux /work/arch/riscv/boot/Image .
+COPY --from=build-linux /work/arch/riscv/boot/Image /
 
 
 FROM scratch AS linux-modules
-COPY --from=build-linux /modules .
+COPY --from=build-linux /modules /
 
 
 FROM base AS configure-busybox
@@ -166,7 +166,7 @@ RUN find . -print0 | cpio --null --create --verbose --format=newc | gzip -9 > ra
 
 
 FROM scratch AS ramdisk
-COPY --from=build-ramdisk /work/ramdisk.cpio.gz .
+COPY --from=build-ramdisk /work/ramdisk.cpio.gz /
 
 
 FROM base AS build-dtb-linux
@@ -174,9 +174,9 @@ COPY --from=u-boot /dtc .
 COPY --from=mmap-defs /cvi_board_memmap.h include/
 COPY --from=configure-linux /work/include/dt-bindings include/dt-bindings
 COPY \
-    duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/dts_riscv/cv1800b_milkv_duo_sd.dts \
-    duo-buildroot-sdk/build/boards/default/dts/cv180x/*.dtsi \
-    duo-buildroot-sdk/build/boards/default/dts/cv180x_riscv/*.dtsi \
+    third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/dts_riscv/cv1800b_milkv_duo_sd.dts \
+    third_party/duo-buildroot-sdk/build/boards/default/dts/cv180x/*.dtsi \
+    third_party/duo-buildroot-sdk/build/boards/default/dts/cv180x_riscv/*.dtsi \
     .
 COPY append.dts .
 RUN \
@@ -185,7 +185,7 @@ RUN \
 
 
 FROM scratch AS dtb-linux
-COPY --from=build-dtb-linux /work/cv1800b_milkv_duo_sd.dtb .
+COPY --from=build-dtb-linux /work/cv1800b_milkv_duo_sd.dtb /
 
 
 FROM base AS build-fitimage
@@ -198,9 +198,9 @@ RUN PATH="${PWD}:${PATH}" ./mkimage -f fitimage.its fitimage.bin
 
 
 FROM scratch AS fitimage
-COPY --from=build-fitimage /work/fitimage.bin .
+COPY --from=build-fitimage /work/fitimage.bin /
 
 
 FROM scratch AS all
-COPY --from=fitimage / .
-COPY --from=fsbl / .
+COPY --from=fitimage / /
+COPY --from=fsbl / /

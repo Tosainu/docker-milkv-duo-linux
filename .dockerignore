@@ -1,0 +1,10 @@
+.git
+build
+ct-ng/*
+!ct-ng/defconfig
+third_party/duo-buildroot-sdk/*
+!third_party/duo-buildroot-sdk/build
+!third_party/duo-buildroot-sdk/fsbl
+!third_party/duo-buildroot-sdk/linux_5.10
+!third_party/duo-buildroot-sdk/opensbi
+!third_party/duo-buildroot-sdk/u-boot-2021.10

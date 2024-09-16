@@ -33,7 +33,7 @@
 			arch = "riscv";
 			os = "linux";
 			compression = "none";
-			hash-i {
+			hash {
 				algo = "sha1";
 			};
 		};
