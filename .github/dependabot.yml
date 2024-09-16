@@ -9,6 +9,6 @@ updates:
     schedule:
       interval: monthly
   - package-ecosystem: gitsubmodule
-    directory: /third_party
+    directory: /
     schedule:
       interval: monthly
