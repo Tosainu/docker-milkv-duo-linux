@@ -52,19 +52,6 @@ FROM scratch AS mmap-defs
 COPY --from=build-mmap-defs /work/cvi_board_memmap.* /
 
 
-FROM base AS build-cvipart
-COPY third_party/duo-buildroot-sdk/build/tools/common/image_tool .
-COPY third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/partition/partition_sd.xml .
-RUN \
-    mkdir include && \
-    python3 mkcvipart.py partition_sd.xml include && \
-    python3 mk_imgHeader.py partition_sd.xml include
-
-
-FROM scratch AS cvipart
-COPY --from=build-cvipart /work/include /
-
-
 FROM base AS configure-linux
 COPY third_party/duo-buildroot-sdk/linux_5.10 .
 COPY third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/linux/cvitek_cv1800b_milkv_duo_sd_defconfig arch/riscv/configs
@@ -74,7 +61,6 @@ RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv cvitek_cv1800b_milk
 FROM base AS configure-u-boot
 COPY third_party/duo-buildroot-sdk/u-boot-2021.10 .
 COPY --from=mmap-defs /cvi_board_memmap.h include/
-COPY --from=cvipart /* include/
 COPY third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/u-boot/cvitek.h include/cvitek/
 COPY third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/u-boot/cvi_board_init.c board/cvitek/
 COPY u-boot/patches /patches
