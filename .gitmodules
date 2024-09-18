@@ -1,3 +1,7 @@
 [submodule "duo-buildroot-sdk"]
 	path = third_party/duo-buildroot-sdk
 	url = https://github.com/milkv-duo/duo-buildroot-sdk
+[submodule "third_party/fsbl"]
+	path = third_party/fsbl
+	url = https://github.com/sophgo/fsbl.git
+	branch = cv18xx-v4.2.x

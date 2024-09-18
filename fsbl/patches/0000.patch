@@ -1,0 +1,85 @@
+diff --git a/make_helpers/fip.mk b/make_helpers/fip.mk
+index 4e4aaa3..ada4b2a 100644
+--- a/make_helpers/fip.mk
++++ b/make_helpers/fip.mk
+@@ -13,7 +13,7 @@ else ifeq (${BOOT_CPU},riscv)
+ ifeq (${CONFIG_SKIP_UBOOT},y)
+ MONITOR_PATH = ${OUTPUT_DIR}/fw_jump.bin
+ else
+-MONITOR_PATH = ../opensbi/build/platform/generic/firmware/fw_dynamic.bin
++MONITOR_PATH = /opensbi/fw_dynamic.bin
+ endif
+ endif
+ 
+diff --git a/plat/cv180x/bl2/bl2_main.c b/plat/cv180x/bl2/bl2_main.c
+index 4f863be..d10e718 100644
+--- a/plat/cv180x/bl2/bl2_main.c
++++ b/plat/cv180x/bl2/bl2_main.c
+@@ -107,6 +107,7 @@ void init_macros(void)
+ // init CVIMMAP_SHARE_MEM_ADDR,CVIMMAP_FREERTOS_ADDR for C906B/C906L
+ void init_ipcm_memory(void)
+ {
++#if 0
+ 	mmio_write_32(AXI_SRAM_BASE + 0x2c, CVIMMAP_FREERTOS_ADDR);
+ 	// 0x30 for usb dl
+ 	mmio_write_32(AXI_SRAM_BASE + 0x34, CVIMMAP_FREERTOS_SIZE);
+@@ -117,9 +118,11 @@ void init_ipcm_memory(void)
+ 	// 		mmio_read_32(AXI_SRAM_BASE + 0x34),
+ 	// 		mmio_read_32(AXI_SRAM_BASE + 0x38),
+ 	// 		mmio_read_32(AXI_SRAM_BASE + 0x3c));
++#endif
+ }
+ void init_param_memory(void)
+ {
++#if 0
+ 	mmio_write_32(CVIMMAP_SHARE_MEM_ADDR + CVIMMAP_SHARE_MEM_SIZE - 4*4 , CVIMMAP_SHARE_PARAM_ADDR);
+ 	mmio_write_32(CVIMMAP_SHARE_MEM_ADDR + CVIMMAP_SHARE_MEM_SIZE - 4*3 , CVIMMAP_SHARE_PARAM_ADDR_BAK);
+ 	mmio_write_32(CVIMMAP_SHARE_MEM_ADDR + CVIMMAP_SHARE_MEM_SIZE - 4*2 , CVIMMAP_PQBIN_ADDR);
+@@ -140,6 +143,7 @@ void init_param_memory(void)
+ 	mmio_write_32(CVIMMAP_ALIOS_LOG_ADDR + CVIMMAP_ALIOS_LOG_SIZE - 0x4, 0);
+ 	mmio_write_32(CVIMMAP_ALIOS_LOG_ADDR + CVIMMAP_ALIOS_LOG_SIZE - 0x8, 0);
+ 	flush_dcache_range(CVIMMAP_ALIOS_LOG_ADDR + CVIMMAP_ALIOS_LOG_SIZE - 64, 64);
++#endif
+ }
+ 
+ void check_spi_nor(void)
+diff --git a/plat/cv180x/bl2/bl2_opt.c b/plat/cv180x/bl2/bl2_opt.c
+index 4b29e8a..21bfeb9 100644
+--- a/plat/cv180x/bl2/bl2_opt.c
++++ b/plat/cv180x/bl2/bl2_opt.c
+@@ -278,7 +278,7 @@ int load_blcp_2nd(int retry)
+ 		}
+ 		fip_param2.blcp_2nd_size = header_2nd_ptr->file_sz;
+ 	} else {
+-		fip_param2.blcp_2nd_size = SECEND_SIZE;
++		fip_param2.blcp_2nd_size = BLCP_2ND_LOADADDR;
+ 	}
+ 
+ 	NOTICE("\t load_pos:%x, part_offset_2nd:%x, size:%x\n", load_pos_com,
+diff --git a/plat/cv180x/include/mmap.h b/plat/cv180x/include/mmap.h
+index a62f82a..c0ec5cb 100644
+--- a/plat/cv180x/include/mmap.h
++++ b/plat/cv180x/include/mmap.h
+@@ -2,7 +2,6 @@
+ #define __MMAP_H__
+ 
+ #include "cvi_board_memmap.h"
+-#include "cvipart.h"
+ 
+ /*
+  * BL1 read-only specific defines.
+diff --git a/plat/cv180x/usb/usb_tty.c b/plat/cv180x/usb/usb_tty.c
+index e1613d8..6086196 100644
+--- a/plat/cv180x/usb/usb_tty.c
++++ b/plat/cv180x/usb/usb_tty.c
+@@ -268,9 +268,9 @@ static void bulkOutCmpl(struct usb_ep *ep, struct usb_request *req)
+ 		(void *)(((uint64_t)(((uint8_t *)req->buf)[3]) << 32) + ((uint64_t)(((uint8_t *)req->buf)[4]) << 24) +
+ 			 ((uint64_t)(((uint8_t *)req->buf)[5]) << 16) + ((uint64_t)(((uint8_t *)req->buf)[6]) << 8) +
+ 			 ((uint64_t)(((uint8_t *)req->buf)[7])));
++#if DBG_USB
+ 	VERBOSE("Transfer complete on ep:%02X %lu req\n", ep->address, (uintptr_t)req);
+ 
+-#if DBG_USB
+ 	for (i = 0; i < 512; i++)
+ 		INFO("cmdBuf[%d] = %x\n", i, cmdBuf[i]);
+ #endif
