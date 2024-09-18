@@ -2,4 +2,6 @@
 	chosen {
 		bootargs = "earlycon console=ttyS0,115200 loglevel=9 rdinit=/sbin/init";
 	};
+
+	/delete-node/ cvi-spif@10000000;
 };
