@@ -54,8 +54,8 @@ COPY --from=build-mmap-defs /work/cvi_board_memmap.* /
 
 FROM base AS configure-linux
 COPY third_party/linux .
-COPY third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/linux/cvitek_cv1800b_milkv_duo_sd_defconfig arch/riscv/configs
-RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv cvitek_cv1800b_milkv_duo_sd_defconfig
+COPY linux/defconfig arch/riscv/configs/milkv_duo_my_defconfig
+RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv milkv_duo_my_defconfig
 
 
 FROM base AS configure-u-boot
