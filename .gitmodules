@@ -9,3 +9,7 @@
 	path = third_party/u-boot
 	url = https://github.com/sophgo/u-boot-2021.10.git
 	branch = cv18xx-v4.2.x
+[submodule "third_party/opensbi"]
+	path = third_party/opensbi
+	url = https://github.com/sophgo/opensbi.git
+	branch = cv18xx-v4.2.x

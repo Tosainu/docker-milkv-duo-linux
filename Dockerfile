@@ -113,7 +113,7 @@ COPY --from=build-u-boot \
 
 
 FROM base AS build-opensbi
-COPY third_party/duo-buildroot-sdk/opensbi .
+COPY third_party/opensbi .
 COPY --from=dtb / /dtb/
 COPY --from=u-boot /u-boot.bin /u-boot/
 RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- PLATFORM=generic FW_PAYLOAD_PATH=/u-boot/u-boot.bin FW_FDT_PATH=/dtb/cv1800b_milkv_duo_sd.dtb -j$(nproc)
