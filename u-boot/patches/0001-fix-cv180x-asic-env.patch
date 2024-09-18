@@ -1,5 +1,62 @@
+diff --git a/arch/riscv/lib/fdt_fixup.c b/arch/riscv/lib/fdt_fixup.c
+index 60ec2ac629..ed38ac2b7d 100644
+--- a/arch/riscv/lib/fdt_fixup.c
++++ b/arch/riscv/lib/fdt_fixup.c
+@@ -138,7 +138,7 @@ int board_fix_fdt(void *fdt)
+ 
+ int arch_fixup_fdt(void *blob)
+ {
+-	int err;
++	int err = 0;
+ #ifdef CONFIG_EFI_LOADER
+ 	u32 size;
+ 	int chosen_offset;
+@@ -164,10 +164,11 @@ int arch_fixup_fdt(void *blob)
+ 		return log_msg_ret("could not set boot-hartid", err);
+ #endif
+ 
++#ifndef CONFIG_SPL_BUILD
+ 	/* Copy the reserved-memory node to the DT used by OS */
+-// 	err = riscv_fdt_copy_resv_mem_node(gd->fdt_blob, blob);
+-// 	if (err < 0)
+-// 		return err;
+-
+-	return 0;
++	err = riscv_fdt_copy_resv_mem_node(gd->fdt_blob, blob);
++	if (err < 0)
++		return err;
++#endif
++	return err;
+ }
+diff --git a/common/fdt_support.c b/common/fdt_support.c
+index 4b169b5298..d9ce1cef11 100644
+--- a/common/fdt_support.c
++++ b/common/fdt_support.c
+@@ -19,6 +19,7 @@
+ #include <fdt_support.h>
+ #include <exports.h>
+ #include <fdtdec.h>
++#include <linux/stringify.h>
+ 
+ /**
+  * fdt_getprop_u32_default_node - Return a node's property or a default
+@@ -292,10 +293,11 @@ int fdt_chosen(void *fdt)
+ 	nodeoffset = fdt_find_or_add_subnode(fdt, 0, "chosen");
+ 	if (nodeoffset < 0)
+ 		return nodeoffset;
+-
+-	// str = board_fdt_chosen_bootargs();
++#ifdef CONFIG_SPL_BUILD
+ 	str = CVI_SPL_BOOTAGRS;
+-
++#else
++	str = board_fdt_chosen_bootargs();
++#endif
+ 	if (str) {
+ 		err = fdt_setprop(fdt, nodeoffset, "bootargs", str,
+ 				  strlen(str) + 1);
 diff --git a/include/configs/cv180x-asic.h b/include/configs/cv180x-asic.h
-index 67d1a0e98..6f83b0ef3 100644
+index 5b213257de..617752ef86 100644
 --- a/include/configs/cv180x-asic.h
 +++ b/include/configs/cv180x-asic.h
 @@ -10,24 +10,10 @@
@@ -28,9 +85,9 @@ index 67d1a0e98..6f83b0ef3 100644
  
  #if defined(__aarch64__)
  #define CONFIG_ARMV8_SWITCH_TO_EL1
-@@ -325,13 +311,13 @@
- 				"mmc read ${uImage_addr} ${BOOT_PART_OFFSET} ${BOOT_PART_SIZE} ;"		\
- 				UBOOT_VBOOT_BOOTM_COMMAND
+@@ -341,16 +327,11 @@
+ 					UBOOT_VBOOT_BOOTM_COMMAND
+ 		#endif
  	#endif
 -
 -#else
@@ -39,11 +96,14 @@ index 67d1a0e98..6f83b0ef3 100644
 -
  #endif /* CONFIG_USE_DEFAULT_ENV */
  
+-#define CVI_SPL_FDT_ADDR CVIMMAP_SPL_FDT_ADDR
+-#define CVI_SPL_BOOTAGRS \
+-	PARTS " "  \
+-	ROOTARGS " " \
+-	"console=ttyS0,115200 earlycon=sbi riscv.fwsz=0x80000" CONSOLE_LOGLEVEL
 +#ifndef CONFIG_EXTRA_ENV_SETTINGS
 +#define CONFIG_EXTRA_ENV_SETTINGS \
 +	"fdt_addr_r=" __stringify(CVIMMAP_UIMAG_ADDR) "\0"
 +#endif
 +
- #define CVI_SPL_BOOTAGRS \
- 	PARTS " "  \
- 	ROOTARGS " " \
+ #endif /* __CV181X_ASIC_H__ */

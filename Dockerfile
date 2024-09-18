@@ -59,7 +59,7 @@ RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv cvitek_cv1800b_milk
 
 
 FROM base AS configure-u-boot
-COPY third_party/duo-buildroot-sdk/u-boot-2021.10 .
+COPY third_party/u-boot .
 COPY --from=mmap-defs /cvi_board_memmap.h include/
 COPY third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/u-boot/cvitek.h include/cvitek/
 COPY third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/u-boot/cvi_board_init.c board/cvitek/
@@ -68,6 +68,7 @@ COPY u-boot/defconfig configs/milkv_duo_my_defconfig
 ENV CHIP=cv1800b
 ENV CVIBOARD=milkv_duo_sd
 RUN \
+    mkdir -p /patches && \
     find /patches -type f -print -exec sh -c 'patch -Np1 < $1' shell {} \; && \
     PATH="${PWD}/scripts/dtc:${PATH}" make CROSS_COMPILE=riscv64-unknown-linux-gnu- milkv_duo_my_defconfig
 
