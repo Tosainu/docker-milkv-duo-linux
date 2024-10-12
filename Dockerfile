@@ -170,6 +170,7 @@ RUN \
 
 FROM scratch AS busybox
 COPY --from=build-busybox /work/_install /
+COPY --from=build-busybox /work/examples/udhcp/simple.script /usr/share/udhcpc/default.script
 
 
 FROM base AS build-ramdisk
