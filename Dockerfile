@@ -171,13 +171,32 @@ RUN \
 FROM scratch AS busybox
 COPY --from=build-busybox /work/_install /
 COPY --from=build-busybox /work/examples/udhcp/simple.script /usr/share/udhcpc/default.script
+COPY --from=build-busybox \
+    /opt/sdk/riscv64-unknown-linux-gnu/riscv64-unknown-linux-gnu/sysroot/etc/rpc \
+    /etc/
+COPY --from=build-busybox \
+    /opt/sdk/riscv64-unknown-linux-gnu/riscv64-unknown-linux-gnu/sysroot/usr/bin/getconf \
+    /opt/sdk/riscv64-unknown-linux-gnu/riscv64-unknown-linux-gnu/sysroot/usr/bin/getent \
+    /opt/sdk/riscv64-unknown-linux-gnu/riscv64-unknown-linux-gnu/sysroot/usr/bin/ldd \
+    /usr/bin/
+COPY --from=build-busybox \
+    /opt/sdk/riscv64-unknown-linux-gnu/riscv64-unknown-linux-gnu/sysroot/lib64/lp64d/libnss_dns.* \
+    /opt/sdk/riscv64-unknown-linux-gnu/riscv64-unknown-linux-gnu/sysroot/lib64/lp64d/libnss_files.* \
+    /lib64/lp64d/
 
 
 FROM base AS build-ramdisk
-COPY --from=busybox / .
-COPY --from=linux-modules / .
-COPY linux/rootfs .
-RUN find . -print0 | cpio --null --create --verbose --format=newc | gzip -9 > /ramdisk.cpio.gz
+COPY linux/strip.sh /
+COPY --from=busybox / rootfs-unpopulated
+COPY --from=linux-modules / rootfs-unpopulated
+COPY linux/rootfs rootfs-unpopulated
+RUN \
+    sed -i 's!gconv;!gconv lib64/lp64 lib64/lp64d;!' /opt/sdk/riscv64-unknown-linux-gnu/bin/riscv64-unknown-linux-gnu-populate && \
+    riscv64-unknown-linux-gnu-populate -s rootfs-unpopulated -d rootfs -v && \
+    cd rootfs && \
+    /strip.sh && \
+    find . -exec touch --no-dereference -t 202410110000 {} + && \
+    find . -print0 | sort --zero-terminated | cpio --create --null --reproducible --verbose --format=newc | gzip -9 > /ramdisk.cpio.gz
 
 
 FROM scratch AS ramdisk
