@@ -56,7 +56,7 @@ index 4b169b5298..d9ce1cef11 100644
  		err = fdt_setprop(fdt, nodeoffset, "bootargs", str,
  				  strlen(str) + 1);
 diff --git a/include/configs/cv180x-asic.h b/include/configs/cv180x-asic.h
-index 5b213257de..617752ef86 100644
+index 5b213257de..777dc4dd94 100644
 --- a/include/configs/cv180x-asic.h
 +++ b/include/configs/cv180x-asic.h
 @@ -10,24 +10,10 @@
@@ -85,7 +85,24 @@ index 5b213257de..617752ef86 100644
  
  #if defined(__aarch64__)
  #define CONFIG_ARMV8_SWITCH_TO_EL1
-@@ -341,16 +327,11 @@
+@@ -68,16 +54,6 @@
+ // Frequency of ARM arch timer and RISC-V rdtime
+ #define SYS_COUNTER_FREQ_IN_SECOND 25000000
+ 
+-/* 16550 Serial Configuration */
+-#define CONFIG_CONS_INDEX		1
+-#define CONFIG_SYS_NS16550_COM1		0x04140000
+-#define CONFIG_SYS_NS16550_SERIAL
+-#define CONFIG_SYS_NS16550_REG_SIZE	(-4)
+-#define CONFIG_SYS_NS16550_MEM32
+-#define CONFIG_SYS_NS16550_CLK		25000000
+-
+-/* include/generated/autoconf.h would define CONFIG_BAUDRATE from drivers/serial/Kconfig (default 115200) */
+-
+ /*#define CONFIG_MENU_SHOW*/
+ 
+ /* Download related definitions */
+@@ -341,16 +317,11 @@
  					UBOOT_VBOOT_BOOTM_COMMAND
  		#endif
  	#endif

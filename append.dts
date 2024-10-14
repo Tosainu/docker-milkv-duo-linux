@@ -1,6 +1,7 @@
 / {
 	chosen {
-		bootargs = "earlycon console=ttyS0,115200 loglevel=9 rdinit=/sbin/init";
+		bootargs = "earlycon console=ttyS4,115200 loglevel=9 rdinit=/sbin/init";
+		stdout-path = "serial4";
 	};
 
 	/delete-node/ cvi-spif@10000000;

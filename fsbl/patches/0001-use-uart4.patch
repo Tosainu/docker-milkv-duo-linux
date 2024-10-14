@@ -1,0 +1,131 @@
+diff --git a/include/console.h b/include/console.h
+index ed7ab0b..df9882e 100644
+--- a/include/console.h
++++ b/include/console.h
+@@ -15,4 +15,6 @@ int console_getc(void);
+ int console_flush(void);
+ int console_tstc(void);
+ 
++void console_set_uart(uintptr_t device);
++
+ #endif /* __CONSOLE_H__ */
+diff --git a/plat/cv180x/bl2/bl2_main.c b/plat/cv180x/bl2/bl2_main.c
+index 4f863be..a1991ee 100644
+--- a/plat/cv180x/bl2/bl2_main.c
++++ b/plat/cv180x/bl2/bl2_main.c
+@@ -10,6 +10,9 @@
+ #include "cvi_spinor.h"
+ #include <usb/cv_usb.h>
+ 
++#include <cv180x_pinlist_swconfig.h>
++#include <cv180x_reg_fmux_gpio.h>
++
+ struct _macros_misc macros_misc;
+ #ifdef DOUBLESDK
+ char boot_flag_A;
+@@ -170,6 +173,15 @@ void bl2_main(void)
+ 	ATF_STATE = ATF_STATE_BL2_MAIN;
+ 	time_records->fsbl_start = read_time_ms();
+ 
++	mmio_write_32(PINMUX_BASE + FMUX_GPIO_REG_IOCTRL_SD1_GPIO1, SD1_GPIO1__UART4_TX);
++	mmio_write_32(PINMUX_BASE + FMUX_GPIO_REG_IOCTRL_SD1_GPIO0, SD1_GPIO0__UART4_RX);
++
++	mmio_write_32(0x05027030, 0x44); // IOBLK_GRTC_REG_SD1_GPIO1: pull-up, driving strength 0b010
++	mmio_write_32(0x05027034, 0x44); // IOBLK_GRTC_REG_SD1_GPIO0: pull-up, driving strength 0b010
++
++	console_set_uart(UART4_BASE);
++	console_init(0, PLAT_UART_CLK_IN_HZ, PLAT_CONSOLE_BAUDRATE);
++
+ 	NOTICE("\nFSBL %s:%s\n", version_string, build_message);
+ 
+ 	INFO("sw_info=0x%x\n", get_sw_info()->value);
+diff --git a/plat/cv180x/include/platform_def.h b/plat/cv180x/include/platform_def.h
+index 7f5e056..b015950 100644
+--- a/plat/cv180x/include/platform_def.h
++++ b/plat/cv180x/include/platform_def.h
+@@ -277,6 +277,7 @@ extern struct _time_records *time_records;
+ #define SPINAND_BASE (HSPERI_BASE + 0x00060000)
+ #define UART0_BASE (HSPERI_BASE + 0x00140000)
+ #define UART2_BASE (HSPERI_BASE + 0x00160000)
++#define UART4_BASE (HSPERI_BASE + 0x001c0000)
+ #define USB_BASE (HSPERI_BASE + 0x00340000)
+ #define EMMC_BASE (HSPERI_BASE + 0x00300000)
+ #define SDIO_BASE (HSPERI_BASE + 0x00310000)
+diff --git a/plat/cv181x/uart/uart_dw.c b/plat/cv181x/uart/uart_dw.c
+index 4a20afd..7e4b00b 100644
+--- a/plat/cv181x/uart/uart_dw.c
++++ b/plat/cv181x/uart/uart_dw.c
+@@ -47,7 +47,12 @@ struct dw_regs {
+ 
+ static struct dw_regs *uart = (struct dw_regs *)PLAT_BOOT_UART_BASE;
+ 
+-void console_init(uintptr_t not_used, unsigned int uart_clk, unsigned int baud_rate)
++void console_set_uart(uintptr_t device)
++{
++	uart = (struct dw_regs *)device;
++}
++
++int console_init(uintptr_t not_used, unsigned int uart_clk, unsigned int baud_rate)
+ {
+ 	int baudrate = baud_rate;
+ 	int uart_clock = uart_clk;
+@@ -69,9 +74,10 @@ void console_init(uintptr_t not_used, unsigned int uart_clk, unsigned int baud_r
+ 	uart->fcr = UART_FCR_DEFVAL;
+ 	asm (""::: "memory");
+ 	uart->lcr = 3;
++	return 1;
+ }
+ 
+-void _uart_putc(uint8_t ch)
++static void _uart_putc(uint8_t ch)
+ {
+ 	do {
+ 		asm (""::: "memory");
+@@ -80,30 +86,24 @@ void _uart_putc(uint8_t ch)
+ 	uart->rbr = ch;
+ }
+ 
+-void console_putc(uint8_t ch)
++int console_putc(uint8_t ch)
+ {
+ 	if (ch == '\n') {
+ 		_uart_putc('\r');
+ 	}
+ 	_uart_putc(ch);
++	return ch;
+ }
+ 
+-void console_puts(char *str)
+-{
+-	if (!str)
+-		return;
+-
+-	while (*str) {
+-		console_putc(*str++);
+-	}
+-}
+-void console_flush(void)
++int console_flush(void)
+ {
+ 	do {
+ 		asm ("" ::: "memory");
+ 	} while ((uart->lsr & (UART_LSR_THRE | UART_LSR_TEMT)) != (UART_LSR_THRE | UART_LSR_TEMT))
+ 		;
++	return 0;
+ }
++
+ int console_getc(void)
+ {
+ 	do {
+@@ -113,11 +113,6 @@ int console_getc(void)
+ 	return (int)uart->rbr;
+ }
+ 
+-int uart_tstc(void)
+-{
+-	return (!!(uart->lsr & UART_LSR_DR));
+-}
+-
+ int console_tstc(void)
+ {
+ 	return uart->lsr & UART_LSR_DR;
