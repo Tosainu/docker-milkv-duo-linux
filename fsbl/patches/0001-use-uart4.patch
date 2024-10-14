@@ -10,7 +10,7 @@ index ed7ab0b..df9882e 100644
 +
  #endif /* __CONSOLE_H__ */
 diff --git a/plat/cv180x/bl2/bl2_main.c b/plat/cv180x/bl2/bl2_main.c
-index 4f863be..a1991ee 100644
+index 4f863be..a593126 100644
 --- a/plat/cv180x/bl2/bl2_main.c
 +++ b/plat/cv180x/bl2/bl2_main.c
 @@ -10,6 +10,9 @@
@@ -23,15 +23,23 @@ index 4f863be..a1991ee 100644
  struct _macros_misc macros_misc;
  #ifdef DOUBLESDK
  char boot_flag_A;
-@@ -170,6 +173,15 @@ void bl2_main(void)
+@@ -170,6 +173,23 @@ void bl2_main(void)
  	ATF_STATE = ATF_STATE_BL2_MAIN;
  	time_records->fsbl_start = read_time_ms();
  
 +	mmio_write_32(PINMUX_BASE + FMUX_GPIO_REG_IOCTRL_SD1_GPIO1, SD1_GPIO1__UART4_TX);
 +	mmio_write_32(PINMUX_BASE + FMUX_GPIO_REG_IOCTRL_SD1_GPIO0, SD1_GPIO0__UART4_RX);
++	mmio_write_32(PINMUX_BASE + FMUX_GPIO_REG_IOCTRL_UART0_TX, UART0_TX__JTAG_TMS);
++	mmio_write_32(PINMUX_BASE + FMUX_GPIO_REG_IOCTRL_UART0_RX, UART0_RX__JTAG_TCK);
++	mmio_write_32(PINMUX_BASE + FMUX_GPIO_REG_IOCTRL_IIC0_SCL, IIC0_SCL__JTAG_TDI);
++	mmio_write_32(PINMUX_BASE + FMUX_GPIO_REG_IOCTRL_IIC0_SDA, IIC0_SDA__JTAG_TDO);
 +
 +	mmio_write_32(0x05027030, 0x44); // IOBLK_GRTC_REG_SD1_GPIO1: pull-up, driving strength 0b010
 +	mmio_write_32(0x05027034, 0x44); // IOBLK_GRTC_REG_SD1_GPIO0: pull-up, driving strength 0b010
++	mmio_write_32(0x0300190c, 0x44); // IOBLK_G7_REG_UART0_TX: pull-up, driving strength 0b010
++	mmio_write_32(0x03001910, 0x44); // IOBLK_G7_REG_UART0_RX: pull-up, driving strength 0b010
++	mmio_write_32(0x03001934, 0x44); // IOBLK_G7_REG_IIC0_SCL: pull-up, driving strength 0b010
++	mmio_write_32(0x03001938, 0x44); // IOBLK_G7_REG_IIC0_SDA: pull-up, driving strength 0b010
 +
 +	console_set_uart(UART4_BASE);
 +	console_init(0, PLAT_UART_CLK_IN_HZ, PLAT_CONSOLE_BAUDRATE);
@@ -39,6 +47,18 @@ index 4f863be..a1991ee 100644
  	NOTICE("\nFSBL %s:%s\n", version_string, build_message);
  
  	INFO("sw_info=0x%x\n", get_sw_info()->value);
+@@ -219,6 +239,11 @@ void bl2_main(void)
+ 
+ 	load_ddr();
+ 	init_param_memory();
++
++	NOTICE("Entering infinite loop.\n");
++	while (1)
++		;
++		
+ #ifdef OD_CLK_SEL
+ 	#ifdef DOUBLESDK
+ 		load_rest_od_sel_doublesdk();
 diff --git a/plat/cv180x/include/platform_def.h b/plat/cv180x/include/platform_def.h
 index 7f5e056..b015950 100644
 --- a/plat/cv180x/include/platform_def.h
