@@ -145,12 +145,12 @@ COPY --from=build-fsbl /work/build/cv180x/fip.bin /
 FROM configure-linux AS build-linux
 RUN \
     mkdir /modules && \
-    make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv -j$(nproc) Image modules && \
+    make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv -j$(nproc) Image.gz modules && \
     make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv INSTALL_MOD_PATH=/modules modules_install
 
 
 FROM scratch AS linux
-COPY --from=build-linux /work/arch/riscv/boot/Image /
+COPY --from=build-linux /work/arch/riscv/boot/Image.gz /
 
 
 FROM scratch AS linux-modules

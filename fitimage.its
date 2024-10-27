@@ -5,11 +5,11 @@
 	images {
 		kernel {
 			description = "kernel";
-			data = /incbin/("Image");
+			data = /incbin/("Image.gz");
 			type = "kernel";
 			arch = "riscv";
 			os = "linux";
-			compression = "none";
+			compression = "gzip";
 			load = <0x80200000>;
 			entry = <0x80200000>;
 			hash {
