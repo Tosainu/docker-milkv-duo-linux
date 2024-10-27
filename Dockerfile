@@ -53,9 +53,14 @@ COPY --from=build-mmap-defs /work/cvi_board_memmap.* /
 
 
 FROM base AS configure-linux
-COPY third_party/linux .
+RUN --mount=type=tmpfs,target=/tmp \
+    curl --no-progress-meter -L https://git.kernel.org/torvalds/t/linux-6.12-rc4.tar.gz -o /tmp/archive.tar.xz && \
+    echo '41356c3cac4b55170506629cab54f3a0ab5a57c0fd1f0e976dbbe66a0a74cc87  /tmp/archive.tar.xz' | sha256sum -c && \
+    tar xf /tmp/archive.tar.xz --strip-components=1
 COPY linux/defconfig arch/riscv/configs/milkv_duo_my_defconfig
-RUN make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv milkv_duo_my_defconfig
+RUN \
+    sed -i '/select EFI\b/d' arch/riscv/Kconfig && \
+    make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv milkv_duo_my_defconfig
 
 
 FROM base AS configure-u-boot
@@ -84,16 +89,13 @@ COPY --from=build-u-boot-dtc /work/scripts/dtc /
 FROM base AS build-dtb
 COPY --from=u-boot-dtc /dtc .
 COPY --from=mmap-defs /cvi_board_memmap.h include/
-COPY --from=configure-linux /work/include/dt-bindings include/dt-bindings
+COPY --from=configure-u-boot /work/include/dt-bindings include/dt-bindings
 COPY \
     third_party/duo-buildroot-sdk/build/boards/cv180x/cv1800b_milkv_duo_sd/dts_riscv/cv1800b_milkv_duo_sd.dts \
     third_party/duo-buildroot-sdk/build/boards/default/dts/cv180x/*.dtsi \
     third_party/duo-buildroot-sdk/build/boards/default/dts/cv180x_riscv/*.dtsi \
     .
-COPY append.dts .
-RUN \
-    cat append.dts >> cv1800b_milkv_duo_sd.dts && \
-    gcc -E -nostdinc -undef -D__DTS__ -x assembler-with-cpp -Iinclude -o - cv1800b_milkv_duo_sd.dts | ./dtc -@ -p 0x1000 -I dts -O dtb -o cv1800b_milkv_duo_sd.dtb
+RUN gcc -E -nostdinc -undef -D__DTS__ -x assembler-with-cpp -Iinclude -o - cv1800b_milkv_duo_sd.dts | ./dtc -@ -p 0x1000 -I dts -O dtb -o cv1800b_milkv_duo_sd.dtb
 
 
 FROM scratch AS dtb
@@ -154,6 +156,20 @@ FROM scratch AS linux-modules
 COPY --from=build-linux /modules /
 
 
+FROM base AS build-dtb-linux
+COPY --from=u-boot-dtc /dtc .
+COPY --from=configure-linux /work/arch/riscv/boot/dts/sophgo/*.dtsi /work/arch/riscv/boot/dts/sophgo/cv1800b-milkv-duo.dts .
+COPY --from=configure-linux /work/include/dt-bindings include/dt-bindings
+COPY append.dts .
+RUN \
+    cat append.dts >> cv1800b-milkv-duo.dts && \
+    gcc -E -nostdinc -undef -D__DTS__ -x assembler-with-cpp -Iinclude -o - cv1800b-milkv-duo.dts | ./dtc -@ -p 0x1000 -I dts -O dtb -o cv1800b-milkv-duo.dtb
+
+
+FROM scratch AS dtb-linux
+COPY --from=build-dtb-linux /work/cv1800b-milkv-duo.dtb .
+
+
 FROM base AS configure-busybox
 RUN --mount=type=tmpfs,target=/tmp \
     curl --no-progress-meter -L https://git.busybox.net/busybox/snapshot/busybox-1_36_1.tar.bz2 -o /tmp/archive.tar.bz2 && \
@@ -204,8 +220,8 @@ COPY --from=build-ramdisk /ramdisk.cpio.gz /
 
 
 FROM base AS build-fitimage
-COPY --from=dtb / .
 COPY --from=linux / .
+COPY --from=dtb-linux / .
 COPY --from=ramdisk / .
 COPY --from=u-boot /mkimage .
 COPY --from=u-boot-dtc /dtc .
