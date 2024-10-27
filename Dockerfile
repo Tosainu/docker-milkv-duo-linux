@@ -7,7 +7,7 @@ RUN \
     unzip xz-utils && \
     rm -rf /var/lib/apt/lists/*
 
-ARG CT_NG_COMMIT_SHA=efcfd1abb6d7bc320ceed062352e0d5bebe6bf1f
+ARG CT_NG_COMMIT_SHA=4773bd609c0f788328d6ffc36f6cc9ea8f09a95f
 RUN \
     mkdir /tmp/ct-ng && \
     cd /tmp/ct-ng && \
@@ -24,7 +24,8 @@ RUN mkdir -p /opt/sdk /work && chown -R ubuntu /opt/sdk /work
 USER ubuntu
 WORKDIR /work
 COPY ct-ng/defconfig .
-RUN ct-ng defconfig && CT_PREFIX=/opt/sdk ct-ng build
+RUN --mount=type=cache,target=/home/ubuntu/src,uid=1000,gid=1000 \
+    ct-ng defconfig && CT_PREFIX=/opt/sdk ct-ng build
 
 
 FROM ubuntu:noble@sha256:dfc10878be8d8fc9c61cbff33166cb1d1fe44391539243703c72766894fa834a AS base
