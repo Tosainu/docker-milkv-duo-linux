@@ -38,7 +38,7 @@ jobs:
           REPOSITORY: ${{ github.repository }}
         run: |
           echo "repository_lower=${REPOSITORY@L}" >> "$GITHUB_OUTPUT"
-      - uses: docker/build-push-action@v6.9.0
+      - uses: docker/build-push-action@v6.10.0
         with:
           push: false
           cache-from: |
