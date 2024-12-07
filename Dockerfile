@@ -55,8 +55,8 @@ COPY --from=build-mmap-defs /work/cvi_board_memmap.* /
 
 FROM base AS configure-linux
 RUN --mount=type=tmpfs,target=/tmp \
-    curl --no-progress-meter -L https://git.kernel.org/torvalds/t/linux-6.12-rc4.tar.gz -o /tmp/archive.tar.xz && \
-    echo '41356c3cac4b55170506629cab54f3a0ab5a57c0fd1f0e976dbbe66a0a74cc87  /tmp/archive.tar.xz' | sha256sum -c && \
+    curl --no-progress-meter -L https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.3.tar.xz -o /tmp/archive.tar.xz && \
+    echo 'c89809cc777d50f1ea484a118630281a26383707a0e752c96fd834f6e765deae  /tmp/archive.tar.xz' | sha256sum -c && \
     tar xf /tmp/archive.tar.xz --strip-components=1
 COPY linux/defconfig arch/riscv/configs/milkv_duo_my_defconfig
 RUN \
