@@ -1,0 +1,31 @@
+From 8cc0eba8e9f8721f94768b5945f4044142c1529d Mon Sep 17 00:00:00 2001
+From: Inochi Amaoto <inochiama@gmail.com>
+Date: Sun, 9 Feb 2025 20:29:32 +0800
+Subject: [PATCH 1/4] dt-bindings: reset: sophgo: Add CV1800B support
+
+Add bindings for the reset generator on the SOPHGO CV1800B
+RISC-V SoC.
+
+Signed-off-by: Inochi Amaoto <inochiama@gmail.com>
+---
+ .../devicetree/bindings/reset/sophgo,sg2042-reset.yaml        | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/reset/sophgo,sg2042-reset.yaml b/Documentation/devicetree/bindings/reset/sophgo,sg2042-reset.yaml
+index 76e1931f0..73f800969 100644
+--- a/Documentation/devicetree/bindings/reset/sophgo,sg2042-reset.yaml
++++ b/Documentation/devicetree/bindings/reset/sophgo,sg2042-reset.yaml
+@@ -11,7 +11,9 @@ maintainers:
+ 
+ properties:
+   compatible:
+-    const: sophgo,sg2042-reset
++    enum:
++      - sophgo,cv1800b-reset
++      - sophgo,sg2042-reset
+ 
+   reg:
+     maxItems: 1
+-- 
+2.49.0
+

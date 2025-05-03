@@ -58,8 +58,11 @@ RUN --mount=type=tmpfs,target=/tmp \
     curl --no-progress-meter -L https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.14.5.tar.xz -o /tmp/archive.tar.xz && \
     echo '28207ec52bbeaa3507010aeff944f442f7d9f22b286b79caf45ec6df1b24f409  /tmp/archive.tar.xz' | sha256sum -c && \
     tar xf /tmp/archive.tar.xz --strip-components=1
+COPY linux/patches /patches
 COPY linux/defconfig arch/riscv/configs/milkv_duo_my_defconfig
 RUN \
+    mkdir -p /patches && \
+    find /patches -type f -print -exec sh -c 'patch -Np1 < $1' shell {} \; && \
     sed -i '/select EFI\b/d' arch/riscv/Kconfig && \
     make CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv milkv_duo_my_defconfig
 
@@ -159,7 +162,7 @@ COPY --from=build-linux /modules /
 
 FROM base AS build-dtb-linux
 COPY --from=u-boot-dtc /dtc .
-COPY --from=configure-linux /work/arch/riscv/boot/dts/sophgo/*.dtsi /work/arch/riscv/boot/dts/sophgo/cv1800b-milkv-duo.dts .
+COPY --from=configure-linux /work/arch/riscv/boot/dts/sophgo/*.dtsi /work/arch/riscv/boot/dts/sophgo/*.h /work/arch/riscv/boot/dts/sophgo/cv1800b-milkv-duo.dts .
 COPY --from=configure-linux /work/include/dt-bindings include/dt-bindings
 COPY append.dts .
 RUN \

@@ -1,0 +1,132 @@
+From 84cfac7dbe33d947260e886c2241da4c9c7e3f86 Mon Sep 17 00:00:00 2001
+From: Inochi Amaoto <inochiama@gmail.com>
+Date: Sun, 9 Feb 2025 20:29:35 +0800
+Subject: [PATCH 4/4] riscv: dts: sophgo: add reset configuration for Sophgo
+ CV1800 series SoC
+
+Add already known reset configuration for existed device.
+
+Signed-off-by: Inochi Amaoto <inochiama@gmail.com>
+---
+ arch/riscv/boot/dts/sophgo/cv18xx.dtsi | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/arch/riscv/boot/dts/sophgo/cv18xx.dtsi b/arch/riscv/boot/dts/sophgo/cv18xx.dtsi
+index 9aa28ade7..4fadcb8e4 100644
+--- a/arch/riscv/boot/dts/sophgo/cv18xx.dtsi
++++ b/arch/riscv/boot/dts/sophgo/cv18xx.dtsi
+@@ -170,6 +170,7 @@ i2c0: i2c@4000000 {
+ 			clocks = <&clk CLK_I2C>, <&clk CLK_APB_I2C0>;
+ 			clock-names = "ref", "pclk";
+ 			interrupts = <49 IRQ_TYPE_LEVEL_HIGH>;
++			resets = <&rst RST_I2C0>;
+ 			status = "disabled";
+ 		};
+ 
+@@ -181,6 +182,7 @@ i2c1: i2c@4010000 {
+ 			clocks = <&clk CLK_I2C>, <&clk CLK_APB_I2C1>;
+ 			clock-names = "ref", "pclk";
+ 			interrupts = <50 IRQ_TYPE_LEVEL_HIGH>;
++			resets = <&rst RST_I2C1>;
+ 			status = "disabled";
+ 		};
+ 
+@@ -192,6 +194,7 @@ i2c2: i2c@4020000 {
+ 			clocks = <&clk CLK_I2C>, <&clk CLK_APB_I2C2>;
+ 			clock-names = "ref", "pclk";
+ 			interrupts = <51 IRQ_TYPE_LEVEL_HIGH>;
++			resets = <&rst RST_I2C2>;
+ 			status = "disabled";
+ 		};
+ 
+@@ -203,6 +206,7 @@ i2c3: i2c@4030000 {
+ 			clocks = <&clk CLK_I2C>, <&clk CLK_APB_I2C3>;
+ 			clock-names = "ref", "pclk";
+ 			interrupts = <52 IRQ_TYPE_LEVEL_HIGH>;
++			resets = <&rst RST_I2C3>;
+ 			status = "disabled";
+ 		};
+ 
+@@ -214,6 +218,7 @@ i2c4: i2c@4040000 {
+ 			clocks = <&clk CLK_I2C>, <&clk CLK_APB_I2C4>;
+ 			clock-names = "ref", "pclk";
+ 			interrupts = <53 IRQ_TYPE_LEVEL_HIGH>;
++			resets = <&rst RST_I2C4>;
+ 			status = "disabled";
+ 		};
+ 
+@@ -225,6 +230,7 @@ uart0: serial@4140000 {
+ 			clock-names = "baudclk", "apb_pclk";
+ 			reg-shift = <2>;
+ 			reg-io-width = <4>;
++			resets = <&rst RST_UART0>;
+ 			status = "disabled";
+ 		};
+ 
+@@ -236,6 +242,7 @@ uart1: serial@4150000 {
+ 			clock-names = "baudclk", "apb_pclk";
+ 			reg-shift = <2>;
+ 			reg-io-width = <4>;
++			resets = <&rst RST_UART1>;
+ 			status = "disabled";
+ 		};
+ 
+@@ -247,6 +254,7 @@ uart2: serial@4160000 {
+ 			clock-names = "baudclk", "apb_pclk";
+ 			reg-shift = <2>;
+ 			reg-io-width = <4>;
++			resets = <&rst RST_UART2>;
+ 			status = "disabled";
+ 		};
+ 
+@@ -258,6 +266,7 @@ uart3: serial@4170000 {
+ 			clock-names = "baudclk", "apb_pclk";
+ 			reg-shift = <2>;
+ 			reg-io-width = <4>;
++			resets = <&rst RST_UART3>;
+ 			status = "disabled";
+ 		};
+ 
+@@ -269,6 +278,7 @@ spi0: spi@4180000 {
+ 			clocks = <&clk CLK_SPI>, <&clk CLK_APB_SPI0>;
+ 			clock-names = "ssi_clk", "pclk";
+ 			interrupts = <54 IRQ_TYPE_LEVEL_HIGH>;
++			resets = <&rst RST_SPI0>;
+ 			status = "disabled";
+ 		};
+ 
+@@ -280,6 +290,7 @@ spi1: spi@4190000 {
+ 			clocks = <&clk CLK_SPI>, <&clk CLK_APB_SPI1>;
+ 			clock-names = "ssi_clk", "pclk";
+ 			interrupts = <55 IRQ_TYPE_LEVEL_HIGH>;
++			resets = <&rst RST_SPI1>;
+ 			status = "disabled";
+ 		};
+ 
+@@ -291,6 +302,7 @@ spi2: spi@41a0000 {
+ 			clocks = <&clk CLK_SPI>, <&clk CLK_APB_SPI2>;
+ 			clock-names = "ssi_clk", "pclk";
+ 			interrupts = <56 IRQ_TYPE_LEVEL_HIGH>;
++			resets = <&rst RST_SPI2>;
+ 			status = "disabled";
+ 		};
+ 
+@@ -302,6 +314,7 @@ spi3: spi@41b0000 {
+ 			clocks = <&clk CLK_SPI>, <&clk CLK_APB_SPI3>;
+ 			clock-names = "ssi_clk", "pclk";
+ 			interrupts = <57 IRQ_TYPE_LEVEL_HIGH>;
++			resets = <&rst RST_SPI3>;
+ 			status = "disabled";
+ 		};
+ 
+@@ -313,6 +326,7 @@ uart4: serial@41c0000 {
+ 			clock-names = "baudclk", "apb_pclk";
+ 			reg-shift = <2>;
+ 			reg-io-width = <4>;
++			resets = <&rst RST_UART4>;
+ 			status = "disabled";
+ 		};
+ 
+-- 
+2.49.0
+
