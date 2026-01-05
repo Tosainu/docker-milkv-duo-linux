@@ -45,6 +45,6 @@ jobs:
             type=registry,ref=ghcr.io/${{ steps.params.outputs.repository_lower }}/cache:main
           context: .
           outputs: type=local,dest=./build/
-      - uses: actions/upload-artifact@v5.0.0
+      - uses: actions/upload-artifact@v6.0.0
         with:
           path: build/*.bin
